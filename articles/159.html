@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png">
+  <link rel="mask-icon" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"happyjava.cn","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="通过Go语言封装一个椭圆曲线算法（ecdsa），方便自己使用。签名算法直接写死sha256了，有需要自行修改即可。 ecc_utils.go">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang封装ecdsa(ecc)相关工具类：密钥生成、序列化、签名、验签">
+<meta property="og:url" content="https://happyjava.cn/articles/159.html">
+<meta property="og:site_name" content="Loger&#39;s blog site">
+<meta property="og:description" content="通过Go语言封装一个椭圆曲线算法（ecdsa），方便自己使用。签名算法直接写死sha256了，有需要自行修改即可。 ecc_utils.go">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-25T03:05:12.000Z">
+<meta property="article:modified_time" content="2021-06-09T07:00:57.554Z">
+<meta property="article:author" content="Loger">
+<meta property="article:tag" content="ecdsa">
+<meta property="article:tag" content="ecc">
+<meta property="article:tag" content="非对称加密">
+<meta property="article:tag" content="数字签名">
+<meta property="article:tag" content="椭圆曲线">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://happyjava.cn/articles/159">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Golang封装ecdsa(ecc)相关工具类：密钥生成、序列化、签名、验签 | Loger's blog site</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Loger's blog site</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Loger's blog site，分享编程知识，顺便发发牢骚</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happyjava.cn/articles/159.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Loger">
+      <meta itemprop="description" content="Loger's blog site，分享编程知识，顺便发发牢骚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Loger's blog site">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Golang封装ecdsa(ecc)相关工具类：密钥生成、序列化、签名、验签
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-25 11:05:12" itemprop="dateCreated datePublished" datetime="2020-03-25T11:05:12+08:00">2020-03-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-06-09 15:00:57" itemprop="dateModified" datetime="2021-06-09T15:00:57+08:00">2021-06-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Golang/" itemprop="url" rel="index"><span itemprop="name">Golang</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>通过Go语言封装一个椭圆曲线算法（ecdsa），方便自己使用。签名算法直接写死sha256了，有需要自行修改即可。</p>
+<p><strong>ecc_utils.go</strong></p>
+<a id="more"></a>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> ecc</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;crypto/ecdsa&quot;</span></span><br><span class="line">    <span class="string">&quot;crypto/elliptic&quot;</span></span><br><span class="line">    <span class="string">&quot;crypto/rand&quot;</span></span><br><span class="line">    <span class="string">&quot;crypto/sha256&quot;</span></span><br><span class="line">    <span class="string">&quot;crypto/x509&quot;</span></span><br><span class="line">    <span class="string">&quot;encoding/base64&quot;</span></span><br><span class="line">    <span class="string">&quot;encoding/hex&quot;</span></span><br><span class="line">    <span class="string">&quot;math/big&quot;</span></span><br><span class="line">    <span class="string">&quot;strings&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GenKeyPair</span><span class="params">()</span> <span class="params">(privateKey <span class="keyword">string</span>, publicKey <span class="keyword">string</span>, e error)</span></span> &#123;</span><br><span class="line">    priKey, e := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    ecPrivateKey, e := x509.MarshalECPrivateKey(priKey)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    privateKey = base64.StdEncoding.EncodeToString(ecPrivateKey)</span><br><span class="line"></span><br><span class="line">    X := priKey.X</span><br><span class="line">    Y := priKey.Y</span><br><span class="line">    xStr, e := X.MarshalText()</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    yStr, e := Y.MarshalText()</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    public := <span class="keyword">string</span>(xStr) + <span class="string">&quot;+&quot;</span> + <span class="keyword">string</span>(yStr)</span><br><span class="line">    publicKey = base64.StdEncoding.EncodeToString([]<span class="keyword">byte</span>(public))</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BuildPrivateKey</span><span class="params">(privateKeyStr <span class="keyword">string</span>)</span> <span class="params">(priKey *ecdsa.PrivateKey, e error)</span></span> &#123;</span><br><span class="line">    bytes, e := base64.StdEncoding.DecodeString(privateKeyStr)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    priKey, e = x509.ParseECPrivateKey(bytes)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">BuildPublicKey</span><span class="params">(publicKeyStr <span class="keyword">string</span>)</span> <span class="params">(pubKey *ecdsa.PublicKey, e error)</span></span> &#123;</span><br><span class="line">    bytes, e := base64.StdEncoding.DecodeString(publicKeyStr)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    split := strings.Split(<span class="keyword">string</span>(bytes), <span class="string">&quot;+&quot;</span>)</span><br><span class="line">    xStr := split[<span class="number">0</span>]</span><br><span class="line">    yStr := split[<span class="number">1</span>]</span><br><span class="line">    x := <span class="built_in">new</span>(big.Int)</span><br><span class="line">    y := <span class="built_in">new</span>(big.Int)</span><br><span class="line">    e = x.UnmarshalText([]<span class="keyword">byte</span>(xStr))</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    e = y.UnmarshalText([]<span class="keyword">byte</span>(yStr))</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    pub := ecdsa.PublicKey&#123;Curve: elliptic.P256(), X: x, Y: y&#125;</span><br><span class="line">    pubKey = &amp;pub</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Sign</span><span class="params">(content <span class="keyword">string</span>, privateKeyStr <span class="keyword">string</span>)</span> <span class="params">(signature <span class="keyword">string</span>, e error)</span></span> &#123;</span><br><span class="line">    priKey, e := BuildPrivateKey(privateKeyStr)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    r, s, e := ecdsa.Sign(rand.Reader, priKey, []<span class="keyword">byte</span>(hash(content)))</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span>, e</span><br><span class="line">    &#125;</span><br><span class="line">    rt, e := r.MarshalText()</span><br><span class="line">    st, e := s.MarshalText()</span><br><span class="line">    signStr := <span class="keyword">string</span>(rt) + <span class="string">&quot;+&quot;</span> + <span class="keyword">string</span>(st)</span><br><span class="line">    signature = hex.EncodeToString([]<span class="keyword">byte</span>(signStr))</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">VerifySign</span><span class="params">(content <span class="keyword">string</span>, signature <span class="keyword">string</span>, publicKeyStr <span class="keyword">string</span>)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">    decodeSign, e := hex.DecodeString(signature)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">    split := strings.Split(<span class="keyword">string</span>(decodeSign), <span class="string">&quot;+&quot;</span>)</span><br><span class="line">    rStr := split[<span class="number">0</span>]</span><br><span class="line">    sStr := split[<span class="number">1</span>]</span><br><span class="line">    rr := <span class="built_in">new</span>(big.Int)</span><br><span class="line">    ss := <span class="built_in">new</span>(big.Int)</span><br><span class="line">    e = rr.UnmarshalText([]<span class="keyword">byte</span>(rStr))</span><br><span class="line">    e = ss.UnmarshalText([]<span class="keyword">byte</span>(sStr))</span><br><span class="line">    pubKey, e := BuildPublicKey(publicKeyStr)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ecdsa.Verify(pubKey, []<span class="keyword">byte</span>(hash(content)), rr, ss)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Hash算法，这里是sha256，可以根据需要自定义</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">hash</span><span class="params">(data <span class="keyword">string</span>)</span> <span class="title">string</span></span> &#123;</span><br><span class="line">    sum := sha256.Sum256([]<span class="keyword">byte</span>(data))</span><br><span class="line">    <span class="keyword">return</span> base64.StdEncoding.EncodeToString(sum[:])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>ecc_utils_test.go</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> ecc</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;testing&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> pubKey = <span class="string">&quot;MTEzODUyMzM5MzU4ODk1MzEzNzg3MzY2NzYwODUwMjE2MjQzNTE0OTc0NjkzMzM2NzA4OTYzNDY0MDk1MTUxMDkyMjY5MjM0NjE3NjMyKzc5NzY5NDM5NTI4NjcxMzc4OTQ3ODYyMzY0MjQ1ODg4ODA0MTEyMDgwOTM4MjgyNjI0MTY4NDUwNjE0NTg4MDc3MDk0MTUxNzk4NzM3&quot;</span></span><br><span class="line"><span class="keyword">const</span> priKey = <span class="string">&quot;MHcCAQEEIBC7/AKbbIHyVF4XJQmvqwrJMX8c8dU2JP6NcReYDlJ1oAoGCCqGSM49AwEHoUQDQgAE+7Yj9jOgDCRccssUMp1NVJExBrJCv6H8LsYUqS8lfSCwW+cdXcnmNDHM5Z2K05bJywyDIWU3f+53z0HK0I4/0Q==&quot;</span></span><br><span class="line"><span class="keyword">const</span> content = <span class="string">&quot;Happyjava not only java&quot;</span></span><br><span class="line"><span class="keyword">const</span> signature = <span class="string">&quot;36393733373630313538383036323831323937313232353733313837333336373132363935303734303237373233373433363139373530313438383239303532303635383433333733313336362b35363137383339343939383534303631323730373630343438313135333633383339333535303836313830343737333331383935333532383537333730363035313839383939353330363939&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestGenKeyPair</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    privateKey, publicKey, e := GenKeyPair()</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        t.Error(e)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    t.Log(<span class="string">&quot;pubKey:&quot;</span>, publicKey)</span><br><span class="line">    t.Log(<span class="string">&quot;priKey:&quot;</span>, privateKey)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestBuildPublicKey</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    publicKey, e := BuildPublicKey(pubKey)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        t.Error(e)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    t.Log(<span class="string">&quot;publicKey:&quot;</span>, publicKey)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestBuildPrivateKey</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    privateKey, e := BuildPrivateKey(priKey)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        t.Error(e)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    t.Log(<span class="string">&quot;privateKey:&quot;</span>, privateKey)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestSign</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    signature, e := Sign(content, priKey)</span><br><span class="line">    <span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">        t.Error(e)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        t.Log(<span class="string">&quot;signature:&quot;</span>, signature)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestVerifySign</span><span class="params">(t *testing.T)</span></span> &#123;</span><br><span class="line">    verify := VerifySign(content, signature, pubKey)</span><br><span class="line">    t.Log(<span class="string">&quot;verify:&quot;</span>, verify)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ecdsa/" rel="tag"># ecdsa</a>
+              <a href="/tags/ecc/" rel="tag"># ecc</a>
+              <a href="/tags/%E9%9D%9E%E5%AF%B9%E7%A7%B0%E5%8A%A0%E5%AF%86/" rel="tag"># 非对称加密</a>
+              <a href="/tags/%E6%95%B0%E5%AD%97%E7%AD%BE%E5%90%8D/" rel="tag"># 数字签名</a>
+              <a href="/tags/%E6%A4%AD%E5%9C%86%E6%9B%B2%E7%BA%BF/" rel="tag"># 椭圆曲线</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/articles/156.html" rel="prev" title="解决IDEA在软件里修改了内存后打不开的问题">
+      <i class="fa fa-chevron-left"></i> 解决IDEA在软件里修改了内存后打不开的问题
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/articles/161.html" rel="next" title="Go使用命令行参数报错：flag provided but not defined: -xxxxx">
+      Go使用命令行参数报错：flag provided but not defined: -xxxxx <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Loger</p>
+  <div class="site-description" itemprop="description">Loger's blog site，分享编程知识，顺便发发牢骚</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">85</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">53</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">浙ICP备17032647号-3 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Loger</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '129b7e3d39366edfd640',
+      clientSecret: '7821fb8e696e0c7f4ce5a12d9fc8105093fdee2e',
+      repo        : 'gittalk',
+      owner       : 'happyjava007',
+      admin       : ['Happyjava007'],
+      id          : 'bb175271e519881663de4e9762bc4901',
+      proxy       : 'https://cors.happyjava.cn',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

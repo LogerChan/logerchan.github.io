@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png">
+  <link rel="mask-icon" href="https://cdn.jsdelivr.net/gh/7768df1cf36e4ae79c6979d3ed4c38d5/7768df1cf36e4ae79c6979d3ed4c38d5.github.io/logo.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"happyjava.cn","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前言之前讲解了springboot（StringRedisTemplate）操作redis的string数据结构，这篇文章将会讲解list数据结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【快学springboot】14.操作redis之list">
+<meta property="og:url" content="https://happyjava.cn/articles/44.html">
+<meta property="og:site_name" content="Loger&#39;s blog site">
+<meta property="og:description" content="前言之前讲解了springboot（StringRedisTemplate）操作redis的string数据结构，这篇文章将会讲解list数据结构">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203932.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203941.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203953.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204009.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204058.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204106.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204115.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204124.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204132.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204150.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204202.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204212.jpeg">
+<meta property="og:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204224.jpeg">
+<meta property="article:published_time" content="2019-06-07T16:51:34.000Z">
+<meta property="article:modified_time" content="2021-06-09T07:00:57.565Z">
+<meta property="article:author" content="Loger">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203932.jpeg">
+
+<link rel="canonical" href="https://happyjava.cn/articles/44">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>【快学springboot】14.操作redis之list | Loger's blog site</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Loger's blog site</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Loger's blog site，分享编程知识，顺便发发牢骚</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://happyjava.cn/articles/44.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Loger">
+      <meta itemprop="description" content="Loger's blog site，分享编程知识，顺便发发牢骚">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Loger's blog site">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【快学springboot】14.操作redis之list
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-06-08 00:51:34" itemprop="dateCreated datePublished" datetime="2019-06-08T00:51:34+08:00">2019-06-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-06-09 15:00:57" itemprop="dateModified" datetime="2021-06-09T15:00:57+08:00">2021-06-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/SpringBoot/" itemprop="url" rel="index"><span itemprop="name">SpringBoot</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>之前讲解了springboot（StringRedisTemplate）操作redis的string数据结构，这篇文章将会讲解list数据结构</p>
+<a id="more"></a>
+
+<h2 id="list数据结构具有的操作"><a href="#list数据结构具有的操作" class="headerlink" title="list数据结构具有的操作"></a><strong>list数据结构具有的操作</strong></h2><p>下图列出了redis list数据结构所具有的方法</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203932.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h2 id="StringRedisTemplate提供的方法"><a href="#StringRedisTemplate提供的方法" class="headerlink" title="StringRedisTemplate提供的方法"></a><strong>StringRedisTemplate提供的方法</strong></h2><p>RedisTemplate提供的操作redis的方法列表如下：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203941.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<p>下面，我们挑一些常用的方法作为实例讲解，其它方法，可以参考API说明即可。</p>
+<h2 id="range"><a href="#range" class="headerlink" title="range"></a><strong>range</strong></h2><p>现在redis中有一个list，其key为：happyjava:list，并且有三个值，如下：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117203953.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<p>range(K key, long start, long end)方法，是获取list指定范围的内容</p>
+<p>start下标从零开始。如下，获取第二个到第三个的元素：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testList</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> List&lt;String&gt; list = redisTemplate.opsForList().range(<span class="string">&quot;happyjava:list&quot;</span>, <span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line"> <span class="keyword">assert</span> list != <span class="keyword">null</span>;</span><br><span class="line"> list.forEach(System.out::println);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">blog.happyjava.cn</span><br><span class="line"></span><br><span class="line">www.happyjava.cn</span><br></pre></td></tr></table></figure>
+<h2 id="size-K-key"><a href="#size-K-key" class="headerlink" title="size(K key)"></a><strong>size(K key)</strong></h2><p>获得list的大小</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> Long size = redisTemplate.opsForList().size(<span class="string">&quot;happyjava:list&quot;</span>);</span><br><span class="line"> System.out.println(size);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输出结果：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204009.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h2 id="leftPush-K-key-V-value"><a href="#leftPush-K-key-V-value" class="headerlink" title="leftPush(K key, V value)"></a><strong>leftPush(K key, V value)</strong></h2><p>该方法标识从list的左边（上边，或者说list的头部）压入数据。如果不存在该key，则会创建该key。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Test</span><br><span class="line">public void testLeftPush() &#123;</span><br><span class="line"> redisTemplate.opsForList().leftPush(&quot;happyjava:list&quot;, &quot;new happyjava&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行后，去查看redis中的数据：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204058.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h2 id="leftPushAll"><a href="#leftPushAll" class="headerlink" title="leftPushAll"></a><strong>leftPushAll</strong></h2><p>有两个重载的方法，分别为不定参数：leftPushAll(K key, V… values); ，</p>
+<p>集合参数：leftPushAll(K key, Collection<V> values)</p>
+<p>不定参数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testLeftPushAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> redisTemplate.opsForList().leftPushAll(<span class="string">&quot;happyjava:list&quot;</span>,<span class="string">&quot;apple&quot;</span>,<span class="string">&quot;happy&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行之后查看数据：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204106.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<p>集合参数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testLeftPushAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="comment">// redisTemplate.opsForList().leftPushAll(&quot;happyjava:list&quot;,&quot;apple&quot;,&quot;happy&quot;);</span></span><br><span class="line"> redisTemplate.opsForList().leftPushAll(<span class="string">&quot;happyjava:list&quot;</span>, Arrays.asList(<span class="string">&quot;new happy1&quot;</span>, <span class="string">&quot;new happy2&quot;</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行之后查看数据：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204115.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h1 id="rightPush-K-key-V-value"><a href="#rightPush-K-key-V-value" class="headerlink" title="rightPush(K key, V value)"></a><strong>rightPush(K key, V value)</strong></h1><p>从list的尾部压入数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Test</span><br><span class="line">public void testRightPush() &#123;</span><br><span class="line"> redisTemplate.opsForList().rightPush(&quot;happyjava:list&quot;,&quot;java&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行之后查看redis数据：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204124.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h1 id="rightPushAll"><a href="#rightPushAll" class="headerlink" title="rightPushAll"></a><strong>rightPushAll</strong></h1><p>该方法与leftPushAll类是，一样有两个重载的方法，如下：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204132.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<p>这里就不做过多的介绍了。</p>
+<h2 id="set-K-key-long-index-V-value-方法"><a href="#set-K-key-long-index-V-value-方法" class="headerlink" title="set(K key, long index, V value)方法"></a><strong>set(K key, long index, V value)方法</strong></h2><p>可以直接设置list中某个下标的值，index从0开始</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testSet</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> redisTemplate.opsForList().set(<span class="string">&quot;happyjava:list&quot;</span>,<span class="number">1</span>,<span class="string">&quot;test set&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行之后查看redis</p>
+<h2 id="remove-K-key-long-count-Object-value-方法"><a href="#remove-K-key-long-count-Object-value-方法" class="headerlink" title="remove(K key, long count, Object value)方法"></a><strong>remove(K key, long count, Object value)方法</strong></h2><p>删除某个值，删除count个，从头开始删除</p>
+<p>现在redis中的数据如下：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204150.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<p>执行一下代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testRemove</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> redisTemplate.opsForList().remove(<span class="string">&quot;happyjava:list&quot;</span>,<span class="number">2</span>,<span class="string">&quot;happy&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行之后查看数据：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204202.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h2 id="index-K-key-long-index-方法"><a href="#index-K-key-long-index-方法" class="headerlink" title="index(K key, long index)方法"></a><strong>index(K key, long index)方法</strong></h2><p>返回index（从0开始）下标的元素。现在redis数据如下：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204212.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testIndex</span><span class="params">()</span> </span>&#123;</span><br><span class="line"> String value = redisTemplate.opsForList().index(<span class="string">&quot;happyjava:list&quot;</span>, <span class="number">1</span>);</span><br><span class="line"> System.out.println(value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行结果如下：</p>
+<p><img src="https://apple-1252736714.cos.ap-nanjing.myqcloud.com/picgo/20210117204224.jpeg" alt="【快学springboot】14.操作redis之list"></p>
+<h2 id="leftPop"><a href="#leftPop" class="headerlink" title="leftPop"></a><strong>leftPop</strong></h2><p>有两个重载的方法：</p>
+<p>V leftPop(K key);</p>
+<p>V leftPop(K key, long timeout, TimeUnit unit);</p>
+<p>此方法会弹出list头部的元素（弹出后就在list中删除），跟栈一样，重载的那个方法，如果list不存在数据，则会阻塞住，等有数据了就会返回（最长阻塞时间就是设置的超时时间）。该方法对应到redis的操作是BLPOP（blocking left pop）</p>
+<h2 id="rightPop"><a href="#rightPop" class="headerlink" title="rightPop"></a><strong>rightPop</strong></h2><p>与leftPop类似，只是从list尾部弹出数据</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>本文讲解了springboot操作redis的list数据结构，大部分方法都已经做了讲解和演示。list也是redis中非常常用的数据结构，以后还会继续讲解redis其它的数据结构。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/SpringBoot/" rel="tag"># SpringBoot</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/articles/42.html" rel="prev" title="Java基于redis实现分布式锁(SpringBoot)">
+      <i class="fa fa-chevron-left"></i> Java基于redis实现分布式锁(SpringBoot)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/articles/51.html" rel="next" title="在centos7中安装MySQL5.7">
+      在centos7中安装MySQL5.7 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#list%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%85%B7%E6%9C%89%E7%9A%84%E6%93%8D%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">list数据结构具有的操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#StringRedisTemplate%E6%8F%90%E4%BE%9B%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">StringRedisTemplate提供的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#range"><span class="nav-number">4.</span> <span class="nav-text">range</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#size-K-key"><span class="nav-number">5.</span> <span class="nav-text">size(K key)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#leftPush-K-key-V-value"><span class="nav-number">6.</span> <span class="nav-text">leftPush(K key, V value)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#leftPushAll"><span class="nav-number">7.</span> <span class="nav-text">leftPushAll</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#rightPush-K-key-V-value"><span class="nav-number"></span> <span class="nav-text">rightPush(K key, V value)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#rightPushAll"><span class="nav-number"></span> <span class="nav-text">rightPushAll</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#set-K-key-long-index-V-value-%E6%96%B9%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">set(K key, long index, V value)方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#remove-K-key-long-count-Object-value-%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">remove(K key, long count, Object value)方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#index-K-key-long-index-%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">index(K key, long index)方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#leftPop"><span class="nav-number">4.</span> <span class="nav-text">leftPop</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rightPop"><span class="nav-number">5.</span> <span class="nav-text">rightPop</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Loger</p>
+  <div class="site-description" itemprop="description">Loger's blog site，分享编程知识，顺便发发牢骚</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">85</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">53</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">浙ICP备17032647号-3 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Loger</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '129b7e3d39366edfd640',
+      clientSecret: '7821fb8e696e0c7f4ce5a12d9fc8105093fdee2e',
+      repo        : 'gittalk',
+      owner       : 'happyjava007',
+      admin       : ['Happyjava007'],
+      id          : '1b643325fbcbf227089636caa372b5d3',
+      proxy       : 'https://cors.happyjava.cn',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
